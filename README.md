@@ -1,145 +1,124 @@
-# Solarys — AI-Powered Solar Project Platform
+# ☀️ Solar PV Ramp Event Forecasting
 
-## Overview
-This project was developed as part of coursework at Esprit School of Engineering.
-It is a **full-stack AI platform** that allows users to **manage the entire lifecycle of a solar
-photovoltaic project** — from the very first electricity bill to the live monitoring of an installed
-system. Solarys orchestrates **seven specialized AI models** behind a single, customer-facing
-web interface so that any solar company can offer a personalized quote, validate the rooftop,
-detect defective panels, monitor battery health, and forecast short-term production drops.
+> **Multimodal Deep Learning for Sudden Solar Power Ramp Detection**  
+> Predicts abrupt changes in photovoltaic output 15 minutes ahead using sky images, weather data, and historical PV readings.
 
-A typical end-to-end customer journey runs like this:
+---
 
-1. **Pre-installation — bill analysis.** The customer uploads their electricity bill; a vision-language model
-   reads the monthly consumption and an agent computes the recommended panel count, total cost,
-   and payback period, then exports a branded PDF quote.
-2. **Pre-installation — rooftop suitability.** A U-Net segments the rooftop on an aerial photo and a
-   geometric placement algorithm proposes a realistic panel layout, confirming whether the roof
-   actually fits the panels recommended in step 1.
-3. **Post-installation — panel inspection.** A 3-step pipeline (binary classifier → defect-type
-   classifier → GradCAM localization) scans an EL image of any panel and flags damage with
-   pixel-level explanations.
-4. **Post-installation — battery monitoring.** A multimodal CNN + LSTM fusion model estimates the
-   State of Health from a thermal scan and 25 operational features, telling the maintenance team
-   when to schedule a replacement.
-5. **Post-installation — production forecast.** A ResNet18 + GRU multimodal model uses 12 fish-eye
-   sky frames + 34 weather/PV features to forecast PV ramp events 15 minutes in advance, so the
-   battery and grid backup can react before a cloud arrives.
-6. **Reports.** All five module outputs are aggregated into a single customer dossier — the
-   "Dupont family" demo scenario walks through the full chain in one screen.
+## 📌 Project Overview
 
-## Features
-- **Bill Analysis.** OCR-style extraction of monthly consumption from an electricity bill
-  + solar agent (panels, total cost, ROI, 25-year savings) + branded PDF quote download.
-- **Rooftop Solar Potential.** U-Net segmentation of aerial / drone imagery, geometric panel
-  placement algorithm, kWp sizing, and yearly production estimate — calibrated to residential scale.
-- **Panel Damage Inspection.** Three-stage AI pipeline that classifies a panel as healthy or
-  damaged, identifies the defect type (burnt cell, crack, finger, short circuit, busbar,
-  dislocation), and highlights the damaged zones with a heat map and bounding boxes.
-- **Battery Health Monitor.** Multimodal fusion of a thermal image (ThermalCNN) and 25 cycling
-  features (BatteryLSTM) with cross-modal attention, producing the standard State of Health
-  metric in [0, 1] with maintenance recommendations.
-- **Solar Production Forecast.** Live "sky-camera" simulation that ingests 12 fish-eye frames
-  + weather CSV + PV history CSV and predicts PV ramp % over the next 15 minutes, flagging
-  sudden ramp events using the F1-optimal threshold from training.
-- **Customer Dossier.** Single page that calls all five modules in parallel and synthesizes
-  the results into a coherent narrative (pre-installation feasibility + post-installation
-  monitoring) with an actionable maintenance list.
-- **One-click demo samples.** Every page has a curated gallery of realistic samples that run
-  the real models live, so reviewers see the full pipeline without uploading their own files.
+Solar power ramp events — sudden drops or spikes in PV output caused by cloud cover changes — pose a major challenge for grid stability. This project builds a **multi-task ResNet18 + GRU hybrid model** that simultaneously:
 
-## Tech Stack
+- **Regresses** the expected PV output change (%) at t+15 min
+- **Classifies** whether a sudden ramp event will occur
 
-### Frontend
-- **React 18** + **Vite** (dev server, HMR)
-- **React Router v6** for client-side navigation
-- **Tailwind CSS** for design tokens, layout and theming
-- **Recharts** for the production-trajectory and 25-year-savings charts
-- **Lucide React** icons
+The model is trained on the **SKIPPD dataset** (Stanford Solar Power Dataset) covering 2017–2019, enriched with NASA POWER meteorological data.
 
-### Backend
-- **Python 3.12** + **FastAPI** + **Uvicorn** (single ASGI app exposing 5 routers)
-- **TensorFlow 2.20** for the rooftop U-Net (Keras model)
-- **PyTorch 2.2** + **torchvision** + **timm** for panel inspection (MobileNetV3, EfficientNet,
-  Swin-T) and the multimodal fusion models (battery SoH and solar ramp)
-- **scikit-learn** + **joblib** for feature scalers, **scipy** for signal processing
-- **OpenCV** + **Pillow** + **tifffile** for image I/O and rendering
-- **pandas** for tabular feature engineering on PV history
-- **ReportLab** for the customer-ready PDF quote generation
+---
 
-### Other Tools
-- **GitHub** for version control
-- **HuggingFace Hub** (Qwen2.5-VL fine-tune for bill OCR — `chtibawi/qwen-bill-model`)
-- **Kaggle Datasets** (Rooftop semantic segmentation, ELPV solar cells, SKIPPD sky/PV)
-- **NASA POWER** weather data (cyclic time + irradiance features for the ramp model)
+## 🗂️ Structure
 
-## Getting Started
+```
+├── E5er_mo7awla.ipynb          # Main training & evaluation notebook
+├── download_weather.py         # NASA POWER API weather data downloader
+├── README.md                   # This file
+```
 
-### Prerequisites
-- **Node.js 18+** and **npm** (frontend)
-- **Python 3.12** (backend)
-- A modern browser (Chrome / Firefox / Edge)
+---
 
-### Run the backend
+## 🧠 Model Architecture
+
+The model fuses **three input streams**:
+
+| Stream | Input | Encoder |
+|---|---|---|
+| 🖼️ Sky Images | 12 consecutive frames (128×128 RGB) | ResNet18 (pretrained) |
+| ⚡ PV History | 15 lag readings (log scale) | GRU |
+| 🌤️ Weather | Meteo features + time encodings | MLP |
+
+The fused representation feeds into two heads:
+- **Regression head** → ramp % at t+15 min
+- **Classification head** → sudden ramp probability
+
+---
+
+## 📦 Dataset
+
+### SKIPPD (Stanford)
+- Sky images + PV log readings, 2017–2019
+- HDF5 format: `2017_2019_images_pv_processed.hdf5`
+- Timestamps: `times_trainval.npy`
+
+### NASA POWER Weather
+Fetched via `download_weather.py` for Stanford coordinates (37.43°N, 122.17°W):
+
+| Variable | Description |
+|---|---|
+| `T2M` | Temperature at 2m (°C) |
+| `RH2M` | Relative humidity (%) |
+| `PS` | Surface pressure (kPa) |
+| `WS2M` | Wind speed at 2m (m/s) |
+| `WD2M` | Wind direction (°) |
+| `PRECTOTCORR` | Precipitation (mm/hr) |
+| `ALLSKY_SFC_SW_DWN` | Solar irradiance (kW·h/m²/day) |
+
+---
+
+
+### Training
+
+Training runs in **2 stages**:
+1. **Stage 1** — ResNet18 backbone frozen, heads trained
+2. **Stage 2** — Full fine-tuning with differential learning rates
+
+
+---
+
+## 📊 Model Output
+
+For each sample, the model returns:
+
+```json
+{
+  "ramp_pct_t_plus_15": -3.18,
+  "sudden_ramp_prob": 0.20,
+  "sudden_ramp_detected": false,
+  "label": "normal"
+}
+```
+
+
+## 🛠️ Dependencies
+
+```
+torch
+torchvision
+numpy
+pandas
+scikit-learn
+scipy
+h5py
+joblib
+matplotlib
+requests
+Pillow
+```
+
+Install with:
 ```bash
-cd backend
-python -m venv venv
-source venv/Scripts/activate   # Windows Git-Bash (use venv\Scripts\activate.bat in cmd)
-pip install -r requirements.txt
-uvicorn app.main:app --port 8000
-```
-The FastAPI app is now live on `http://localhost:8000` (interactive docs at `/docs`).
-
-### Run the frontend
-In a second terminal:
-```bash
-npm install
-npm run dev
-```
-Open `http://localhost:5173` and click any of the seven AI modules from the sidebar.
-
-### Optional: regenerate rooftop demo samples
-```bash
-cd backend
-python scripts/pick_rooftop_samples.py --top 10            # show top candidates
-python scripts/pick_rooftop_samples.py --copy 5            # write top 5 to samples/
+pip install torch torchvision numpy pandas scikit-learn scipy h5py joblib matplotlib requests Pillow
 ```
 
-### Optional: tune rooftop calibration
-The rooftop service applies a calibration factor (default `0.40`) that brings Kaggle-tile-scale
-predictions into typical residential range. Override via env var:
-```bash
-ROOFTOP_CALIBRATION=0.35 uvicorn app.main:app --port 8000
-```
+---
 
-## Project Structure
-```
-Solarys_platform/
-├── backend/
-│   ├── app/
-│   │   ├── main.py                 # FastAPI entry point — registers 5 routers
-│   │   ├── config.py               # paths to bundled models/samples
-│   │   ├── routers/                # bill, rooftop, panel, battery, ramp
-│   │   └── services/               # solar agent, U-Net, fusion model, etc.
-│   ├── scripts/
-│   │   ├── generate_ramp_samples.py    # builds bundled demo samples for module 07
-│   │   └── pick_rooftop_samples.py     # auto-curates rooftop samples from the dataset
-│   └── requirements.txt
-├── src/                            # React frontend
-│   ├── pages/                      # 7 AI module pages + Dashboard + Reports
-│   ├── components/                 # Sidebar, UploadZone, AlertBanner, etc.
-│   └── services/api.js             # backend API client
-├── models_input/                   # all 7 trained models + their sample data
-└── README.md
-```
+## 📍 References
 
-## Demo scenario
-The platform is wired around a single coherent customer story — the **Dupont family at
-12 rue des Roses, Paris**. Their bill calls for 11 panels (21 800 €, 12.5-year payback);
-the rooftop analysis confirms 17 panels would fit; three years post-installation, panel
-inspection finds one burnt cell, the battery is at 80 % capacity (monitor closely), and
-today's afternoon clouds will cause a –3.2 pp dip in production. All of this is aggregated
-on the **Customer Dossier** page (the Reports tab).
+- **SKIPPD Dataset**: [Kaggle – marghedranim/skippd](https://www.kaggle.com/datasets/marghedranim/skippd)
+- **NASA POWER API**: [power.larc.nasa.gov](https://power.larc.nasa.gov/)
 
-## Acknowledgments
-This project was created under the supervision of Esprit School of Engineering.
+---
+
+## 👤 Author
+
+> Project developed as part of solar energy forecasting research.  
+> Feel free to open issues or pull requests for improvements.
