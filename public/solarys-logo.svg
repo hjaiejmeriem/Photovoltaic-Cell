@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" fill="none">
+  <text x="0" y="38" font-family="Arial, sans-serif" font-weight="800" font-size="32" letter-spacing="2" fill="#1E6FBA">SOLAR</text>
+  <g transform="translate(108, 8)">
+    <path d="M12 18 L4 4 L20 4 Z" fill="#1E6FBA"/>
+    <path d="M12 18 L12 32" stroke="#1E6FBA" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="12" cy="6" r="6" fill="#F4C430"/>
+    <g stroke="#F4C430" stroke-width="1.5" stroke-linecap="round">
+      <line x1="12" y1="-3" x2="12" y2="-1"/>
+      <line x1="20" y1="6" x2="22" y2="6"/>
+      <line x1="2" y1="6" x2="4" y2="6"/>
+      <line x1="18" y1="0" x2="19.5" y2="-1.5"/>
+      <line x1="6" y1="0" x2="4.5" y2="-1.5"/>
+    </g>
+  </g>
+  <text x="135" y="38" font-family="Arial, sans-serif" font-weight="800" font-size="32" letter-spacing="2" fill="#1E6FBA">S</text>
+  <text x="0" y="54" font-family="Arial, sans-serif" font-weight="500" font-size="10" letter-spacing="3" fill="#1E6FBA">SMART SOLAR ENERGY</text>
+</svg>

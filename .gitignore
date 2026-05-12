@@ -1,0 +1,39 @@
+# ── Node / frontend ──────────────────────────────────────────
+node_modules/
+dist/
+.vite/
+.env
+.env.local
+
+# ── Python / backend ────────────────────────────────────────
+backend/venv/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── Models — keep the integration code, NOT the heavy weights ──
+# (the ~/models_input directory is multi-GB, contains zips, and is
+# regenerated from the colleague's exports — do not push to GitHub)
+models_input/
+
+# ── Generated samples / temp files ──────────────────────────
+backend/scripts/__pycache__/
+*.log
+/tmp/
+
+# ── OS / IDE ────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ── Claude Code ──────────────────────────────────────────────
+.claude/
+
+# ── Generated PDFs at runtime ───────────────────────────────
+backend/report.pdf
+*.pdf
