@@ -19,7 +19,7 @@ The model is trained on the **SKIPPD dataset** (Stanford Solar Power Dataset) co
 ## 🗂️ Structure
 
 ```
-├── E5er_mo7awla.ipynb          # Main training & evaluation notebook
+├── FinalBaseline (1).ipynb          # Main training & evaluation notebook
 ├── download_weather.py         # NASA POWER API weather data downloader
 ├── README.md                   # This file
 ```
